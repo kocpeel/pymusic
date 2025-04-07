@@ -67,10 +67,13 @@ class MusicPlayerUI(QWidget):
 
     def set_volume(self):
         volume = self.volume_slider.value() / 100
-        print(f"Volume set to {volume}")  # pydub nie obsługuje zmiany głośności w czasie rzeczywistym
+        # print(f"Volume set to {volume}")  # pydub nie obsługuje zmiany głośności w czasie rzeczywistym
 
     def update_song_info(self):
-        title, bitrate, mixrate = self.player.get_song_info()
+        title, bitrate, mixrate = (
+            self.player.get_current_song_info().values()
+        )
+
         self.song_label.setText(f"Song: {title}")
         self.bit_rate_label.setText(f"Bitrate: {bitrate}")
         self.mix_rate_label.setText(f"Mixrate: {mixrate}")
