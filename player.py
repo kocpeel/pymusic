@@ -1,49 +1,77 @@
-from pydub import AudioSegment
-from pydub.playback import play
 import os
-import random
-import threading
+import pygame
 
 class MusicPlayer:
     def __init__(self, music_folder="music"):
-        self.music_folder = music_folder
+        self.music_folder = os.path.abspath(music_folder)
         self.playlist = [os.path.join(self.music_folder, f) for f in os.listdir(self.music_folder) if f.endswith(".mp3")]
         self.current_index = 0
-        self.shuffle_mode = False
-        self.loop_mode = False
-        self.current_song = None
         self.is_playing = False
+        self.is_looping = False
+        self.shuffle = False
+
+        pygame.mixer.init()
 
     def play(self):
         try:
             if self.playlist:
                 song_path = self.playlist[self.current_index]
-                self.current_song = AudioSegment.from_file(song_path, format="mp3")
+                print(f"Playing: {song_path}")
+                pygame.mixer.music.load(song_path)
+                pygame.mixer.music.play(-1 if self.is_looping else 0)
                 self.is_playing = True
-                threading.Thread(target=play, args=(self.current_song,), daemon=True).start()
         except Exception as e:
             print(f"Error playing song: {e}")
 
+    def pause(self):
+        if self.is_playing:
+            pygame.mixer.music.pause()
+
+    def resume(self):
+        if self.is_playing:
+            pygame.mixer.music.unpause()
+
     def stop(self):
+        pygame.mixer.music.stop()
         self.is_playing = False
-        self.current_song = None
 
     def next_song(self):
-        self.current_index = (self.current_index + 1) % len(self.playlist) if not self.shuffle_mode else random.randint(0, len(self.playlist) - 1)
+        self.stop()
+        if self.shuffle:
+            import random
+            self.current_index = random.randint(0, len(self.playlist) - 1)
+        else:
+            self.current_index = (self.current_index + 1) % len(self.playlist)
         self.play()
 
     def prev_song(self):
+        self.stop()
         self.current_index = (self.current_index - 1) % len(self.playlist)
         self.play()
 
-    def toggle_shuffle(self):
-        self.shuffle_mode = not self.shuffle_mode
+    def restart_song(self):
+        self.stop()
+        self.play()
+
+    def set_volume(self, volume):  # volume: 0.0 to 1.0
+        pygame.mixer.music.set_volume(volume)
+
+    def get_current_song_info(self):
+        if self.playlist:
+            song = os.path.basename(self.playlist[self.current_index])
+            return {
+                "title": song,
+                "bitrate": "128 kbps",
+                "mixrate": "44 kHz"
+            }
+        return {
+            "title": "No Song",
+            "bitrate": "0 kbps",
+            "mixrate": "0 kHz"
+        }
 
     def toggle_loop(self):
-        self.loop_mode = not self.loop_mode
+        self.is_looping = not self.is_looping
 
-    def get_song_info(self):
-        if self.playlist:
-            filename = os.path.basename(self.playlist[self.current_index])
-            return filename, "128 kbps", "44 kHz"
-        return "No Song", "0 kbps", "0 kHz"
+    def toggle_shuffle(self):
+        self.shuffle = not self.shuffle
