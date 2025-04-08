@@ -1,5 +1,6 @@
 import os
 import pygame
+import random
 
 class MusicPlayer:
     def __init__(self, music_folder="music"):
@@ -9,36 +10,41 @@ class MusicPlayer:
         self.is_playing = False
         self.is_looping = False
         self.shuffle = False
+        self.paused = False
 
         pygame.mixer.init()
+        pygame.mixer.music.set_volume(0.5)
 
     def play(self):
         try:
+            if self.paused:
+                pygame.mixer.music.unpause()
+                self.paused = False
+                return
+
             if self.playlist:
                 song_path = self.playlist[self.current_index]
                 print(f"Playing: {song_path}")
                 pygame.mixer.music.load(song_path)
                 pygame.mixer.music.play(-1 if self.is_looping else 0)
                 self.is_playing = True
+                self.paused = False
         except Exception as e:
             print(f"Error playing song: {e}")
 
     def pause(self):
         if self.is_playing:
             pygame.mixer.music.pause()
-
-    def resume(self):
-        if self.is_playing:
-            pygame.mixer.music.unpause()
+            self.paused = True
 
     def stop(self):
         pygame.mixer.music.stop()
         self.is_playing = False
+        self.paused = False
 
     def next_song(self):
         self.stop()
         if self.shuffle:
-            import random
             self.current_index = random.randint(0, len(self.playlist) - 1)
         else:
             self.current_index = (self.current_index + 1) % len(self.playlist)
@@ -46,7 +52,10 @@ class MusicPlayer:
 
     def prev_song(self):
         self.stop()
-        self.current_index = (self.current_index - 1) % len(self.playlist)
+        if self.shuffle:
+            self.current_index = random.randint(0, len(self.playlist) - 1)
+        else:
+            self.current_index = (self.current_index - 1) % len(self.playlist)
         self.play()
 
     def restart_song(self):
@@ -72,6 +81,8 @@ class MusicPlayer:
 
     def toggle_loop(self):
         self.is_looping = not self.is_looping
+        return self.is_looping
 
     def toggle_shuffle(self):
         self.shuffle = not self.shuffle
+        return self.shuffle

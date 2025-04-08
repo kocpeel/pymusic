@@ -3,6 +3,7 @@ from PyQt5.QtCore import Qt, QTimer
 from PyQt5.QtGui import QIcon
 from player import MusicPlayer
 import os
+import pygame
 
 
 class MusicPlayerUI(QWidget):
@@ -40,13 +41,14 @@ class MusicPlayerUI(QWidget):
         self.shuffle_button = QPushButton(QIcon(os.path.join(assets_path, "shuffle.png")), "")
         self.loop_button = QPushButton(QIcon(os.path.join(assets_path, "loop.png")), "")
 
+        # Podpięcie przycisków do metod interfejsu UI
         self.play_button.clicked.connect(self.player.play)
-        self.pause_button.clicked.connect(self.player.stop)  # pydub nie obsługuje pauzy
+        self.pause_button.clicked.connect(self.player.pause)
         self.stop_button.clicked.connect(self.player.stop)
         self.next_button.clicked.connect(self.player.next_song)
         self.prev_button.clicked.connect(self.player.prev_song)
-        self.shuffle_button.clicked.connect(self.player.toggle_shuffle)
-        self.loop_button.clicked.connect(self.player.toggle_loop)
+        self.shuffle_button.clicked.connect(self.toggle_shuffle)
+        self.loop_button.clicked.connect(self.toggle_loop)
 
         layout.addWidget(self.song_label)
         layout.addWidget(self.bit_rate_label)
@@ -66,14 +68,29 @@ class MusicPlayerUI(QWidget):
         self.setLayout(layout)
 
     def set_volume(self):
-        volume = self.volume_slider.value() / 100
-        # print(f"Volume set to {volume}")  # pydub nie obsługuje zmiany głośności w czasie rzeczywistym
+        volume = self.volume_slider.value() / 100.0
+        self.player.set_volume(volume)
 
     def update_song_info(self):
-        title, bitrate, mixrate = (
-            self.player.get_current_song_info().values()
-        )
-
+        info = self.player.get_current_song_info()
+        title = info["title"]
+        bitrate = info["bitrate"]
+        mixrate = info["mixrate"]
         self.song_label.setText(f"Song: {title}")
         self.bit_rate_label.setText(f"Bitrate: {bitrate}")
         self.mix_rate_label.setText(f"Mixrate: {mixrate}")
+
+        # Automatyczne przejście do następnej piosenki, jeśli utwór się skończył,
+        # a piosenka nie jest zatrzymana ani zapauzowana.
+        if self.player.is_playing and not pygame.mixer.music.get_busy() and not self.player.paused:
+            self.player.next_song()
+
+    def toggle_shuffle(self):
+        is_shuffle = self.player.toggle_shuffle()
+        color = "green" if is_shuffle else ""
+        self.shuffle_button.setStyleSheet(f"background-color: {color}")
+
+    def toggle_loop(self):
+        is_looping = self.player.toggle_loop()
+        color = "green" if is_looping else ""
+        self.loop_button.setStyleSheet(f"background-color: {color}")
