@@ -41,7 +41,6 @@ class MusicPlayerUI(QWidget):
         self.shuffle_button = QPushButton(QIcon(os.path.join(assets_path, "shuffle.png")), "")
         self.loop_button = QPushButton(QIcon(os.path.join(assets_path, "loop.png")), "")
 
-        # Podpięcie przycisków do metod interfejsu UI
         self.play_button.clicked.connect(self.player.play)
         self.pause_button.clicked.connect(self.player.pause)
         self.stop_button.clicked.connect(self.player.stop)
@@ -80,8 +79,7 @@ class MusicPlayerUI(QWidget):
         self.bit_rate_label.setText(f"Bitrate: {bitrate}")
         self.mix_rate_label.setText(f"Mixrate: {mixrate}")
 
-        # Automatyczne przejście do następnej piosenki, jeśli utwór się skończył,
-        # a piosenka nie jest zatrzymana ani zapauzowana.
+
         if self.player.is_playing and not pygame.mixer.music.get_busy() and not self.player.paused:
             self.player.next_song()
 
